@@ -1,0 +1,9 @@
+html,
+body {
+  background: white;
+}
+
+text {
+  user-select: none;
+  cursor: default;
+}
