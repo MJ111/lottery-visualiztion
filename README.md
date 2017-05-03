@@ -6,7 +6,6 @@ $ git clone https://github.com/MJ111/lottery-visualiztion.git
 $ cd lottery-visualiztion
 $ npm install
 $ node server.js
-$ open index.html
+open the browser and enter the localhost:8080 url
+click the start button!
 ```
-
-click the start!
