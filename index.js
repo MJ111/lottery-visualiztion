@@ -1,108 +1,116 @@
-const howManyInRow = 100
-const howManyInCol = 100
-const total = howManyInRow * howManyInCol
-const radius = 12
-const width = radius * 2 * howManyInRow
-const height = radius * 2 * howManyInCol
+const random = new Random()
 
-const userdata = []
-for (let i = 0; i < total; i++) {
-  userdata.push(i)
-}
-
-const svgContainer =
-    d3.select("body").append("svg")
-        .attr("width", width)
-        .attr("height", height)
-
-const node =
-    svgContainer.selectAll("g")
-    .data(userdata.map(function (v) {
-      return {num: v, color: getRandomColor()}
-    }))
-    .enter()
-    .append("g")
-    .attr("id", function (d) { return `node${d.num}` })
-    .attr("class", "node")
-    .attr("transform", function (/*not used*/d, i) {
-      return `translate(${radius + (i % howManyInRow) * 2 * radius},
-        ${radius + Math.floor(i / howManyInRow) * 2 * radius})`
-    })
-
-const circles =
-    node.append("circle")
-      .attr("id", function (d) { return `circle${d.num}` })
-      .attr("r", radius - 3) // add some space between circles
-      .style("fill", "white")
-      .style("stroke", function (d) { return d.color })
-      .style("opacity", 0)
-
-circles.transition()
-  .duration(3000)
-  .style("opacity", 1)
-
-const groupCh = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-node.append("text")
-  .style("fill", function (d) { return d.color })
-  .attr("dx", function () { return -5 })
-  .attr("font-size", "4px")
-  .text(function (d) {
-    return getGroupNum(d.num)
-  })
-
-function getRandomColor() {
-  return '#' + Math.random().toString(16).substr(-6)
-}
-
-function getGroupNum(num) {
-  return groupCh[Math.floor(num / 10000)] + (num % 10000)
-}
-
-function pickWinner(total) {
-  const winnerNum = Math.floor(Math.random() * total)
-  const winner = getGroupNum(winnerNum)
-  setTimeout(function () {
-    alert(`The winner is... ${winner}!`)
-    console.log(`The winner is... ${winner}!`)
-  }, 2000)
-  return winnerNum
-}
-
-document.getElementById("startBtn").addEventListener("click", function () {
-  const t = d3.timer(function (elapsed) {
-    if (elapsed > 8000) {
-      t.stop()
-
-      node
-          .transition()
-            .duration(2000)
-            .style("opacity", 0)
-            .call(endall, function() {
-                d3.select(`#node${pickWinner(total)}`).style("opacity", 1)
-            })
-    } else {
-      for (let i=0; i<total/100; i++) {
-        d3.select(`#node${Math.floor(Math.random() * total)}`)
-            .transition()
-              .duration(1000)
-              .style("opacity", 0)
-            .transition()
-              .duration(1000)
-              .style("opacity", 1)
-      }
-    }
-  }, 2000)
+$.get("users.csv", function(data) {
+  console.log("loaded")
+  const users = parseCSV(data)
+  $("#winner-btn").on("click", showWinner(users))
 })
 
-function endall(transition, callback) {
-  if (typeof callback !== "function") throw new Error("Wrong callback in endall")
-  if (transition.size() === 0) { callback() }
-  let n = 0
-  transition
-      .on("start", function() { ++n })
-      .on("end", function() { if (!--n) callback.apply(this, arguments) })
+function parseCSV(data) {
+  const users = []
+  const splited = data.split("\n")
+  splited.forEach(function(val, i) {
+    if (i === splited.length-1) { // last black new line
+      return
+    }
+    let user = val.split(",")
+    let phone = user[1]
+    users.push({origin: user, email: user[0].slice(0, 4), phone: phone.slice(phone.length-4)})
+  })
+  return users
 }
 
+function shuffle(array) {
+  const dup = array.slice()
+  for (let i = dup.length; i; i--) {
+    let j = random.integer(0, i-1);
+    [dup[i - 1], dup[j]] = [dup[j], dup[i - 1]];
+  }
+  return dup
+}
+
+const fourthsNumber = 40
+function* winnerMaker(users) {
+  let rank = 1
+  while (rank < 5) {
+    if (rank < 4) {
+      yield {rank: rank, winner: users.splice(random.integer(0, users.length-1), 1)[0]}
+    } else if (rank === 4) {
+      yield {rank: rank, winner: shuffle(users).slice(0, fourthsNumber)}
+    }
+    rank++
+  }
+}
+
+function showWinner(users) {
+  const gen = winnerMaker(users)
+
+  return function () {
+    let value = gen.next().value
+
+    if (value === undefined) {
+      return
+    }
+
+    let rank = value.rank
+    let winner = value.winner
+    let animateCallback = function () {
+      showModal(4-rank, winner.email, winner.phone)
+      log(4-rank, winner.origin)
+    }
+    if (rank === 4) {
+      animateCallback = function () {
+        show4thsModal(winner)
+        log("4ths", winner.map(function (val) {
+          return val.origin
+        }))
+      }
+    }
+    $('#box').animateCss('wobble', animateCallback)
+  }
+}
+
+function showModal(rank, email, phone) {
+  $("#modal").show()
+  $("#rank").html(rank)
+  $("#email .right").html(email)
+  $("#phone .right").html(phone)
+}
+
+function show4thsModal(users) {
+  $("#fourths-modal").show()
+  users.forEach(function(val) {
+    $("#fourths-container").append(`       
+      <div class="fourth-desc" >
+        <div class="left">Email 앞 4글자</div><div class="right">${val.email}</div>
+        <div class="left">Phone 뒤 4글자</div><div class="right">${val.phone}</div>
+      </div>`)
+  })
+}
+
+$("#modal .close").on("click", function() {
+  $("#modal").hide()
+})
+
+$("#fourths-modal .close").on("click", function() {
+  $("#fourths-modal").hide()
+})
+
+var winnerResult = {}
+function log(...msg) {
+  console.log(msg)
+  winnerResult[msg[0]] = msg[1]
+}
+
+$.fn.extend({
+  animateCss: function (animationName, animationEndCallback) {
+    var animationEnd = 'webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend';
+    this.addClass('animated ' + animationName).one(animationEnd, function() {
+      $(this).removeClass('animated ' + animationName)
+      animationEndCallback()
+    })
+  }
+})
+
 // prevent back button mistake
-window.onbeforeunload = function() { return "Are you sure?" }
+window.onbeforeunload = function() { return true }

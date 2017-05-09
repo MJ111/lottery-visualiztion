@@ -6,11 +6,11 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "minjeong kim",
   "license": "ISC",
   "dependencies": {
-    "animejs": "^2.0.2",
-    "d3": "^4.8.0",
-    "express": "^4.15.2"
+    "express": "^4.15.2",
+    "jquery": "^3.2.1",
+    "random-js": "^1.0.8"
   }
 }
