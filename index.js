@@ -3,7 +3,15 @@ const random = new Random()
 $.get("users.csv", function(data) {
   console.log("loaded")
   const users = parseCSV(data)
-  $("#winner-btn").on("click", showWinner(users))
+  const runner = showWinner(users)
+
+  $("#winner-btn").on("click", runner)
+  $("#retry-btn").on("click", function () {
+    if (rank > 1) {
+      rank--
+      runner()
+    }
+  })
 })
 
 function parseCSV(data) {
@@ -30,15 +38,14 @@ function shuffle(array) {
 }
 
 const fourthsNumber = 40
+let rank = 1 // for retry
 function* winnerMaker(users) {
-  let rank = 1
   while (rank < 5) {
     if (rank < 4) {
-      yield {rank: rank, winner: users.splice(random.integer(0, users.length-1), 1)[0]}
+      yield {rank: rank++, winner: users.splice(random.integer(0, users.length-1), 1)[0]}
     } else if (rank === 4) {
-      yield {rank: rank, winner: shuffle(users).slice(0, fourthsNumber)}
+      yield {rank: rank++, winner: shuffle(users).slice(0, fourthsNumber)}
     }
-    rank++
   }
 }
 
@@ -88,12 +95,8 @@ function show4thsModal(users) {
   })
 }
 
-$("#modal .close").on("click", function() {
-  $("#modal").hide()
-})
-
-$("#fourths-modal .close").on("click", function() {
-  $("#fourths-modal").hide()
+$(".close").on("click", function() {
+  $(".modal").hide()
 })
 
 var winnerResult = {}

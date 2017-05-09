@@ -597,6 +597,7 @@ h2 {
   border-radius: 20px;
   background-color: #ffffff;
   margin-top: 30px;
+    margin-right: 10px;
 }
 
 .winner-btn span {
@@ -710,6 +711,11 @@ h2 {
 
 .fourth-email, .fourth-phone {
   display: inline;
+}
+
+.alert {
+ width: 500px;
+ height: 300px;
 }
 
 /* The Close Button */
